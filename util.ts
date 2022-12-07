@@ -39,7 +39,7 @@ export function resolveName(str: string) {
     throw new Error("Invalid schema format");
   }
 
-  const arr = str.slice(1).split(":");
+  const arr = str.slice(1).split(".");
   if (arr.length < 2) throw new Error("Invalid name or host");
 
   if (!arr[0].match(/^[a-z][a-z0-9_]*$/i)) {
