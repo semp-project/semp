@@ -42,7 +42,7 @@ export function resolveName(str: string) {
   const arr = str.slice(1).split(".");
   if (arr.length < 2) throw new Error("Invalid name or host");
 
-  if (!arr[0].match(/^[a-z][a-z0-9_]*$/i)) {
+  if (!arr[0].match(/^[a-z0-9][a-z0-9_]*$/i)) {
     throw new Error("Invalid user name");
   }
 
