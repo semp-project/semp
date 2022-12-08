@@ -169,7 +169,7 @@ export class Application {
       },
     });
 
-    if (res.status !== 200) {
+    if (res.status >= 400) {
       // Exchange fail
       throw new Error("Exchange fail");
     }
