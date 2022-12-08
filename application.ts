@@ -38,7 +38,7 @@ export class Application {
     validate(json, {
       type: "object",
       properties: {
-        server_public_key: { type: "string", pattern: "[a-z0-9]{64}" },
+        server_public_key: { type: "string", pattern: "[a-f0-9]{64}" },
         ban_hosts: { type: "array", items: { type: "string" } },
       },
     });
@@ -135,7 +135,12 @@ export class Application {
 
     const buf = new TextEncoder().encode(strToSign);
     if (!await ed25519.verify(sign, buf, key)) {
-      throw new Error("Unverified signature");
+      throw new HttpError(
+        "Unverified signature",
+        `strToSign=${strToSign} publicKey=${
+          hex.encode(key)
+        } request_signature=${req.headers.get("authorization")}`,
+      );
     }
   }
 
