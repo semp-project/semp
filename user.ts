@@ -55,24 +55,28 @@ export async function updateUser(req: Request, app: Application) {
 
   return new Response(null, { status: 204 });
 }
+
 export async function send(req: Request, app: Application) {
   await app.localAuthorize(req);
   const input = await streamBodyHash<ExchangeBody>(req);
 
   validate(input, {
-    to: { type: "string" },
-    from: { type: "string" },
-    timestamp: { type: "string" },
-    content: { type: "string", pattern: "[a-f0-9]{32,}" },
-    sign: { type: "string", pattern: "[a-f0-9]{32,}" },
-    nonce: { type: "string" },
+    type: "object",
+    properties: {
+      to: { type: "string" },
+      from: { type: "string" },
+      timestamp: { type: "string" },
+      content: { type: "string", pattern: "[a-f0-9]{32,}" },
+      sign: { type: "string", pattern: "[a-f0-9]{32,}" },
+      nonce: { type: "string" },
+    },
   });
 
   try {
     const from = resolveName(input.from);
     const to = resolveName(input.to);
 
-    if (from.host === to.host) {
+    if (from.host === to.host && to.host === app.hostname) {
       await app.database.storeMessage({
         ...input,
         id: genMessageId(),
@@ -96,8 +100,11 @@ export async function getMessage(req: Request, app: Application) {
   const name = new URL(req.url).pathname.slice(1);
 
   validate(input, {
-    limit: { type: "integer" },
-    since: { type: "string" },
+    type: "object",
+    properties: {
+      limit: { type: "integer", minimum: 1, maximum: 100 },
+      since: { type: "string" },
+    },
   });
 
   if (!input.limit) input.limit = 20;
