@@ -55,17 +55,24 @@ export async function exchange(req: Request, app: Application) {
   const input = await streamBodyHash<ExchangeBody>(req);
 
   validate(input, {
-    to: { type: "string" },
-    from: { type: "string" },
-    timestamp: { type: "string" },
-    content: { type: "string", pattern: "[a-f0-9]{32,}" },
-    sign: { type: "string", pattern: "[a-f0-9]{64}" },
-    nonce: { type: "string" },
+    type: "object",
+    properties: {
+      to: { type: "string" },
+      from: { type: "string" },
+      timestamp: { type: "string" },
+      content: { type: "string", pattern: "[a-f0-9]{32,}" },
+      sign: { type: "string", pattern: "[a-f0-9]{64}" },
+      nonce: { type: "string" },
+    },
   });
 
   try {
     resolveName(input.from);
-    resolveName(input.to);
+    const to = resolveName(input.to);
+
+    if (to.host !== app.hostname) {
+      throw new Error("Not allowed accept other hosts messages");
+    }
   } catch (err) {
     throw new HttpError("Invalid user name", err.message);
   }

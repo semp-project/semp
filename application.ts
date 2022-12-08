@@ -60,7 +60,7 @@ export class Application {
     validate(json, {
       type: "object",
       properties: {
-        public_key: { type: "string", pattern: "[a-z0-9]{64}" },
+        public_key: { type: "string", pattern: "[a-f0-9]{64}" },
         ban_hosts: { type: "array", items: { type: "string" } },
         ban_users: { type: "array", items: { type: "string" } },
       },
@@ -68,12 +68,12 @@ export class Application {
 
     const ban_hosts = json.ban_hosts as string[];
     if (ban_hosts.includes(this.hostname)) {
-      throw new Error("Remote server has baned our server");
+      throw new Error("Remote server has banned our server");
     }
 
     const ban_users = json.ban_users as string[];
     if (ban_users.includes(local)) {
-      throw new Error("Remote user has baned your account");
+      throw new Error("Remote user has banned your account");
     }
 
     return hex.decode(json.public_key);
@@ -166,6 +166,7 @@ export class Application {
         origin: `https://${this.hostname}`,
         "x-semp-nonce": nonce,
         authorization: hex.encode(sign),
+        date: params.timestamp,
       },
     });
 
