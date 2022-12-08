@@ -1,6 +1,6 @@
 import { DataProvider, ExchangeBody, getProvider } from "./provider.ts";
 import { resolveName, validate } from "./util.ts";
-import { ed25519, hex } from "./deps.ts";
+import { ed25519, hex, HttpError } from "./deps.ts";
 
 type AppConfig = {
   hostname: string;
@@ -172,7 +172,10 @@ export class Application {
 
     if (res.status >= 400) {
       // Exchange fail
-      throw new Error("Exchange fail");
+      const errRes = await res.text();
+      throw new HttpError("Exchange fail", errRes);
     }
+
+    await res.body?.cancel();
   }
 }
