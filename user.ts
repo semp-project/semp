@@ -113,3 +113,18 @@ export async function getMessage(req: Request, app: Application) {
     name: `@${name}.${app.hostname}`,
   });
 }
+
+export async function deleteMessages(req: Request, app: Application) {
+  await app.localAuthorize(req);
+  const input = await streamBodyHash<string[]>(req);
+  const name = new URL(req.url).pathname.slice(1);
+
+  validate(input, {
+    type: "array",
+    items: { type: "string" },
+  });
+
+  await app.database.deleteMessages(`@${name}.${app.hostname}`, input);
+
+  return new Response(null, { status: 204 });
+}

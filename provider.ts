@@ -23,7 +23,7 @@ export interface DataProvider {
 
   /** Messages */
   getMessages(input: GetMessageInput): Promise<Message[]>;
-  deleteMessages(list: string[]): Promise<void>;
+  deleteMessages(user: string, list: string[]): Promise<void>;
   storeMessage(input: MessageInput): Promise<void>;
 
   /** Server ban list, global */

@@ -18,7 +18,7 @@ export function handle(app: Application) {
 
     const cl = parseInt(req.headers.get("content-length")!);
     if (cl > app.bodyLimit) {
-      return respondJson(
+      return respond(
         {
           error: "Body too large",
           description: `Content length out of limit: ${app.bodyLimit}`,
@@ -35,13 +35,13 @@ export function handle(app: Application) {
         // handle server operations
         switch (req.method) {
           case "GET":
-            return respondJson(await server.status(req, app));
+            return respond(await server.status(req, app));
           case "PATCH":
-            return respondJson(await server.update(req, app));
+            return respond(await server.update(req, app));
           case "PUT":
-            return respondJson(await server.createUser(req, app));
+            return respond(await server.createUser(req, app));
           case "POST":
-            return respondJson(await server.exchange(req, app));
+            return respond(await server.exchange(req, app));
         }
       }
 
@@ -49,20 +49,22 @@ export function handle(app: Application) {
         // handle user operations
         switch (req.method) {
           case "GET":
-            return respondJson(await user.getUser(req, app));
+            return respond(await user.getUser(req, app));
           case "POST":
-            return respondJson(await user.getMessage(req, app));
+            return respond(await user.getMessage(req, app));
           case "PUT":
-            return respondJson(await user.send(req, app));
+            return respond(await user.send(req, app));
           case "PATCH":
-            return respondJson(await user.updateUser(req, app));
+            return respond(await user.updateUser(req, app));
+          case "DELETE":
+            return respond(await user.deleteMessages(req, app));
         }
       }
     } catch (err) {
       if (err instanceof HttpError) {
         return err.toResponse();
       } else {
-        return respondJson({ error: err.message }, {}, 400);
+        return respond({ error: err.message }, {}, 400);
       }
     }
 
@@ -80,7 +82,7 @@ function JSONFormater(_key: string, val: unknown) {
   }
 }
 
-function respondJson(data: unknown, headers?: HeadersInit, status = 200) {
+function respond(data: unknown, headers?: HeadersInit, status = 200) {
   if (data instanceof Response) return data;
   return new Response(
     JSON.stringify(data, JSONFormater),

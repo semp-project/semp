@@ -30,11 +30,15 @@ export async function createUser(req: Request, app: Application) {
 export async function status(_: Request, app: Application) {
   const server_public_key = await ed25519.getPublicKey(app.serverKey);
   return {
+    /** SEMP version */
+    semp: 1,
     ban_hosts: await app.database.getBanHosts(),
     timestamp: Date.now(),
     server_admin: `@${app.adminName}.${app.hostname}`,
     admin_public_key: app.adminPublicKey,
     server_public_key,
+
+    openRegistration: true,
   };
 }
 

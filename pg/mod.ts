@@ -137,10 +137,11 @@ ORDER BY timestamp DESC LIMIT ${input.limit}`;
   }
 
   /** Delete user messages by id list */
-  async deleteMessages(list: string[]) {
+  async deleteMessages(user: string, list: string[]) {
     const db = await this.#db.connect();
 
-    await db.queryArray`DELETE FROM messages WHERE id IN ${list}`;
+    await db
+      .queryArray`DELETE FROM messages WHERE id IN ${list} AND to=${user}`;
 
     db.release();
   }
