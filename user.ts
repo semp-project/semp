@@ -20,7 +20,7 @@ export async function createUser(req: Request, app: Application) {
     },
   });
 
-  // TODO: Contorl rate limit
+  // TODO: Control rate limit
 
   const pkey = hex.decode(input.public_key);
   const namebuf = new Uint8Array(await crypto.subtle.digest("SHA-256", pkey));
@@ -41,16 +41,17 @@ export async function updateUser(req: Request, app: Application) {
 
   validate(input, {
     type: "object",
-    required: ["name"],
+    required: ["display_name", "ban_hosts", "ban_users", "untrusted_at"],
     properties: {
-      public_key: { type: "string", pattern: "[0-9a-f]{64}" },
       display_name: { type: "string" },
       ban_hosts: { type: "array", items: { type: "string" } },
       ban_users: { type: "array", items: { type: "string" } },
+      untrusted_at: { type: "string", nullable: true },
     },
   });
 
   const name = new URL(req.url).pathname.slice(1);
+
   await app.database.updateUser(name, input);
 
   return new Response(null, { status: 204 });
@@ -119,10 +120,7 @@ export async function deleteMessages(req: Request, app: Application) {
   const input = await streamBodyHash<string[]>(req);
   const name = new URL(req.url).pathname.slice(1);
 
-  validate(input, {
-    type: "array",
-    items: { type: "string" },
-  });
+  validate(input, { type: "array", items: { type: "string" } });
 
   await app.database.deleteMessages(`@${name}.${app.hostname}`, input);
 

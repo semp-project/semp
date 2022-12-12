@@ -11,7 +11,6 @@ import type {
 import { Migrations } from "./migration.ts";
 
 export type MigrationFn = (db: pg.PoolClient) => Promise<unknown>;
-const MAX_ID = "ffffffffffffffffffff";
 
 export class PostgresDataProvider implements DataProvider {
   #db: pg.Pool;
@@ -115,13 +114,34 @@ VALUES (${input.name},${pubkey},${input.display_name},'{}','{}') ON CONFLICT DO 
   async updateUser(name: string, data: UpdateUserInput) {
     const db = await this.#db.connect();
 
-    await db.queryArray`UPDATE users SET display_name=${data.display_name},
-public_key=${hex.decode(data.public_key as string)},
+    const tx = db.createTransaction(`update_${name}`);
+    await tx.begin();
+
+    try {
+      const res = await tx
+        .queryArray`SELECT untrusted_at FROM users WHERE name=${name}`;
+
+      if (!res.rows.length) {
+        throw new Error("User not found");
+      }
+
+      if (!res.rows[0][0] && data.untrusted_at === null) {
+        throw new Error("User is untrusted, cannot modified to trusted");
+      }
+
+      await tx.queryArray`UPDATE users SET display_name=${data.display_name},
 ban_hosts=${data.ban_hosts},
-ban_users=${data.ban_users} 
+ban_users=${data.ban_users},
+untrusted_at${data.untrusted_at ? new Date(data.untrusted_at) : null} 
 WHERE name=${name}`;
 
-    db.release();
+      await tx.commit();
+    } catch (err) {
+      await tx.rollback();
+      throw err;
+    } finally {
+      db.release();
+    }
   }
 
   /** Get user messages */
@@ -129,8 +149,8 @@ WHERE name=${name}`;
     const db = await this.#db.connect();
 
     const res = await db.queryObject`SELECT id,"from","to","timestamp",content 
-FROM messages WHERE "to"=${input.name} AND id<${input.since || MAX_ID}
-ORDER BY timestamp DESC LIMIT ${input.limit}`;
+FROM messages WHERE "to"=${input.name} AND id>${input.since || ""}
+ORDER BY timestamp LIMIT ${input.limit}`;
 
     db.release();
     return res.rows as Message[];
@@ -146,12 +166,24 @@ ORDER BY timestamp DESC LIMIT ${input.limit}`;
     db.release();
   }
 
+  /** Delete expired messages, defaults 7 days */
+  async deleteExpiredMessages(e = 604800) {
+    const db = await this.#db.connect();
+
+    const prefix = hex.decode((~~(Date.now() / e)).toString(16));
+    const bin = new Uint8Array([...prefix, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+    const id = hex.encode(bin);
+    await db.queryArray`DELETE FROM messages WHERE id<${id}`;
+
+    db.release();
+  }
+
   /** Get user information */
   async getUser(name: string) {
     const db = await this.#db.connect();
 
     const res = await db
-      .queryObject`SELECT name,public_key,display_name,ban_hosts,ban_users 
+      .queryObject`SELECT name,public_key,display_name,ban_hosts,ban_users,untrusted_at 
 FROM users WHERE name=${name} LIMIT 1`;
 
     if (!res.rows.length) throw new Error(`User '${name}' not found`);

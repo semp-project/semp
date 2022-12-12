@@ -40,4 +40,12 @@ export const Migrations: MigrationFn[] = [
   */
   (db) =>
     db.queryArray`CREATE TABLE IF NOT EXISTS ban_hosts (host TEXT PRIMARY KEY)`,
+
+  /**
+  2022-12-12 10:30
+
+  Add untrusted_at column for user table
+  */
+  (db) =>
+    db.queryArray`ALTER TABLE users ADD COLUMN untrusted_at TIMESTAMP DEFAULT NULL`,
 ];

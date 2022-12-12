@@ -29,6 +29,7 @@ export interface DataProvider {
   /** Server ban list, global */
   getBanHosts(): Promise<string[]>;
   setBanHosts(hosts: string[]): Promise<void>;
+  deleteExpiredMessages(e: number): Promise<void>;
 }
 
 export type CreateUserInput = {
@@ -41,7 +42,7 @@ export type UpdateUserInput = {
   display_name: string;
   ban_hosts: string[];
   ban_users: string[];
-  public_key?: string;
+  untrusted_at: Date | null;
 };
 
 export type UserInfo = {

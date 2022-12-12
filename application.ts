@@ -63,8 +63,14 @@ export class Application {
         public_key: { type: "string", pattern: "[a-f0-9]{64}" },
         ban_hosts: { type: "array", items: { type: "string" } },
         ban_users: { type: "array", items: { type: "string" } },
+        untrusted_at: { type: "string", nullable: true },
       },
     });
+
+    if (json.untrusted_at) {
+      // Handle untrusted user
+      console.warn("untrusted user", json);
+    }
 
     const ban_hosts = json.ban_hosts as string[];
     if (ban_hosts.includes(this.hostname)) {
