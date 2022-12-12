@@ -23,12 +23,23 @@ export async function createUser(req: Request, app: Application) {
   // TODO: Control rate limit
 
   const pkey = hex.decode(input.public_key);
-  const namebuf = new Uint8Array(await crypto.subtle.digest("SHA-256", pkey));
-  input.name = hex.encode(namebuf.slice(0, 4));
+  const hostKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(app.hostname),
+    { name: "HMAC", hash: "SHA-256" },
+    true,
+    ["sign"],
+  );
+  const buffer = await crypto.subtle.sign(
+    { name: "HMAC", hash: "SHA-256" },
+    hostKey,
+    pkey,
+  );
+  const name = hex.encode(new Uint8Array(buffer).slice(0, 4));
 
-  await app.database.createUser(input);
+  await app.database.createUser({ ...input, name });
 
-  return { name: input.name };
+  return { name };
 }
 
 export async function getUser(req: Request, app: Application) {
